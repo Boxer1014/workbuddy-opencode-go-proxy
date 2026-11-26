@@ -47,7 +47,75 @@ $env:OPENCODE_GO_PROXY_LOG_FILE = "D:\logs\opencode-go-proxy.log"
 python opencode_go_proxy.py
 ```
 
-## 客户端配置
+## WorkBuddy 使用
+
+### 1. 启动代理
+
+双击 `start-proxy.bat`。窗口中出现以下内容后保持窗口开启：
+
+```text
+OpenCode Go proxy is running.
+OpenAI Base URL:    http://127.0.0.1:8787/v1
+Anthropic Base URL: http://127.0.0.1:8787
+Press Ctrl+C to stop.
+```
+
+关闭这个窗口或按 `Ctrl+C` 后，代理就会停止，WorkBuddy 里的
+OpenCode Go 模型也会暂时不可用。
+
+可以另开一个 PowerShell 窗口检查代理是否正常：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/health
+```
+
+正常时返回类似结果：
+
+```json
+{
+  "error": "ok",
+  "message": "Proxy is running.",
+  "upstream": "https://opencode.ai"
+}
+```
+
+### 2. 在 WorkBuddy 中添加自定义模型
+
+在 WorkBuddy 的模型设置中添加一个自定义模型，接口类型选择 OpenAI 兼容
+或 OpenAI Chat Completions，然后填写：
+
+| 配置项 | 填写内容 |
+| --- | --- |
+| 模型名称 | `OpenCode Go Proxy`，也可以自行命名 |
+| Base URL | `http://127.0.0.1:8787/v1` |
+| API Key | 你自己的 `oc_sk_` 开头的 OpenCode Console 密钥 |
+| 模型 ID | 填写 OpenCode Go 提供的完整模型 ID，例如 `deepseek-v4.1-flash` |
+
+只需要把 Base URL 指向本地代理，API Key 和模型 ID 仍使用 OpenCode Go 原本的
+值。不要填写 `https://opencode.ai/inference/go/openai/v1`，WorkBuddy
+直连该地址会因缺少 `x-opencode-session` 而报 `missing_session_id`。
+
+填写后点击 WorkBuddy 的“测试连接”。测试通过后保存模型，并在聊天界面的模型
+选择器中选中它。如果模型没有立即出现，可以新建一个对话或重启 WorkBuddy。
+
+工具调用、图片输入、推理档位等开关应按所选模型的真实能力设置；不确定时先
+保持 WorkBuddy 的默认值。代理不会修改模型参数，只会补充请求头并转发请求。
+
+### 3. 实际使用
+
+保持代理窗口开启，然后在 WorkBuddy 中选择刚添加的 `OpenCode Go Proxy`
+模型并正常对话即可。WorkBuddy 内置的其他模型不会经过代理，可以继续照常使用。
+
+如果测试连接失败：
+
+- `Connection refused`：代理没有启动，或启动后已经关闭。
+- `missing_session_id`：Base URL 仍然指向 OpenCode 官方地址，而不是
+  `http://127.0.0.1:8787/v1`。
+- `401`：检查 API Key 是否正确，以及 OpenCode Go 订阅是否有效。
+- `403` 且使用免费模型：免费模型不允许 WorkBuddy 等外部客户端调用，请换成
+  Go 套餐中的模型。
+
+## 其他客户端配置
 
 OpenAI Chat Completions 格式：
 
